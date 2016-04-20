@@ -1,0 +1,364 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using CsQuery;
+using System.Data;
+using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Xml;
+
+namespace scc9eSuppWins
+{
+    public partial class suppWinForm : Form
+    {
+        private const string _suppWinTop = @"<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset=""utf-8"">
+<meta http-equiv=""X-UA-Compatible"" content=""IE=edge,chrome=1"" >
+<meta name = ""viewport"" content=""width=device-width, initial-scale=1.0"">
+<title>_DL_TITLE_</title>
+<link href = ""../../../../css/boilerplate.css"" media=""screen"" rel=""stylesheet"" type=""text/css"" >
+<link href = ""../../../../css/jquery-ui-custom.css"" media=""screen"" rel=""stylesheet"" type=""text/css"" >
+<link href = ""../../../../css/manuscript.css"" media=""screen"" rel=""stylesheet"" type=""text/css"" >
+<link href = ""../../../../css/digfir_ebook_fw.css"" media=""screen"" rel=""stylesheet"" type=""text/css"" >
+<link href = ""../../../../css/scc9e.css"" media=""screen"" rel=""stylesheet"" type=""text/css"" >
+<link href = ""../../../../css/scc9e_ch_DL_CHAPTER_NUMBER_.css"" media=""screen"" rel=""stylesheet"" type=""text/css"" >
+<link href = ""../../../../asset/supp_win.css"" media=""screen"" rel=""stylesheet"" type=""text/css"" >
+</head>
+<body id=""supp_win"">
+<div id=""manuscript"">
+<div data-type=""section"" data-block_type=""section"">";
+
+        private const string _suppWinBottom = @"</div>
+</div>
+<script type=""text/javascript"" src=""../../../../js/utilities.js""></script>
+<script type = ""text/javascript"" src=""../../../../js/query_types.js""></script>
+<script type = ""text/javascript"" src=""../../../../js/player.js""></script>
+<script type = ""text/javascript"" src=""../../../../js/jquery.js""></script>
+<script type = ""text/javascript"" src=""../../../../js/jquery-ui-1.8.16.custom.min.js""></script>
+<script type = ""text/javascript"" src=""../../../../js/jquery_extensions.js""></script>
+<script type = ""text/javascript"" src=""../../../../js/swfobject.js""></script>
+<script type = ""text/javascript"" src=""http://admin.brightcove.com/js/BrightcoveExperiences.js""></script>
+<script type = ""text/javascript"" src=""../../../../js/digfir_ebook_fw.js""></script>
+<script type = ""text/javascript"" src=""../../../../js/scc9e.js""></script>
+<script type = ""text/javascript"" src=""../../../../js/scc9e_ch_DL_CHAPTER_NUMBER_.js""></script>
+<script type = ""text/javascript"" src=""../../../supp_win.js""></script>
+<script type = ""text/javascript"">
+
+//<!--
+$(window).ready(function ()
+    {
+        player.initialize('52c6e83c757a2ef70c000000');
+    });
+//-->
+</script>
+</body>
+</html>";
+
+
+        // source HTML files
+        private string srcDir = @"c:\Users\Meade\Source\Repos\scc9e-html\scc9e-html\scc9e-html\ebook"; private string[] srcHtmlFiles;
+        // supplemental output directory -- will be adjusted per chapter
+        private string baseSuppWinDir;
+        private string suppWinDir;
+        // supplemental file base name, the prefix of all HTML page files.
+        // *could* be derived from file contents or source HTML files
+        private const string bookId = "scc9e";
+        // List to contain HTML tag block for use in supplemental windows. Extracted from source HTML files.
+        private List<string> tagList = new List<string>();
+        private const string btFig = "FIGURE";
+        private const string btUnfig = "UN-FIGURE";
+        private const string btTable = "TABLE";
+        private const string btUntable = "UN-TABLE";
+        private const string dtQuestion = "question";
+        private const string subChapNum = "_DL_CHAPTER_NUMBER_";
+        private const string subTitle = "_DL_TITLE_";
+        // edited copies of constants above
+        private string suppWinTop;
+        private string suppWinBottom;
+        // private const string btQyt = "BX2-QUE-N-ri"; ???
+        // private const string btQquest = "CR-X-NL-N-ri"; ???
+        private const string btExample = "EXP";
+        // provisional chapter number -- encapsulate more than this!
+        private string chapnum;
+
+        public suppWinForm()
+        {
+            InitializeComponent();
+        }
+
+        // All configuration settings may be moved to a configuration file
+        // There can be several config files, one for each book, and the interface might
+        // just allow for the selection of one of them.
+        private void SourceDirBtn_Click(object sender, EventArgs e)
+        {
+            selDirDialog.Description = "Select HTML Source Directory";
+            // for now, can source dir for convenience
+            selDirDialog.SelectedPath = srcDir;
+            // but allow it to be changed as well
+            if (DialogResult.OK == selDirDialog.ShowDialog())
+            {
+                srcDir = selDirDialog.SelectedPath;
+                SrcDirLabel.Text = srcDir;
+            }
+        }
+
+        private void genSWsBtn_Click(object sender, EventArgs e)
+        {
+            if (srcDir == null) return;
+
+            // Here's code for chapter files, but will eventually need to include appendices, FM/BM, etc.
+
+            srcHtmlFiles = Directory.GetFiles(srcDir, bookId + "_ch*.html");
+
+            foreach (string secfile in srcHtmlFiles)
+            {
+                // Set base directory for all supp wins. Some will be put in subdirectories.
+                setBaseSuppWinDir(secfile);
+
+                // Process figures
+                suppWinDir = baseSuppWinDir + @"figures\";
+                // generate numbered figure supplemental window files
+                genFigSuppWins(secfile, btFig);
+                // generate unnumbered figure supplemental window files
+                // genFigSuppWins(secfile, btUnfig);
+
+                // Process tables
+                // use table subdirectory
+                suppWinDir = baseSuppWinDir + @"tables\";
+                // generate numbered table supplemental window files
+                genTblSuppWins(secfile, btTable);
+                // generate unnumbered table supplemental window files
+                // genTblSuppWins(secfile, btUntable);
+
+                // Process questions
+                // use questions subdirectory
+                suppWinDir = baseSuppWinDir + @"exercises\";
+                // generate question supplemental window files
+                // Problems section
+                genQSuppWins(secfile, dtQuestion);
+
+                // Process examples
+                // use examples subdirectory
+                suppWinDir = baseSuppWinDir + @"examples\";
+                // generate example supplemental window files
+                genExpSuppWins(secfile, btExample);
+            }
+
+        }
+
+        // used to set global class variable, but needs directory name appendage for different supp win directories
+        private void setBaseSuppWinDir(string HtmlFile)
+        {
+            // get chapter number from filename
+            var fname = Path.GetFileNameWithoutExtension(HtmlFile);
+            Regex rgx = new Regex(@".*?_ch0?(\d+)_\d*");
+            chapnum = rgx.Replace(fname, "$1");
+            // get source file path, add on target path
+            baseSuppWinDir = Path.GetDirectoryName(HtmlFile) + @"\asset\ch" + chapnum + @"\supp_wins\";
+        }
+
+        private void genFigSuppWins(string HtmlFile, string block_type)
+        {
+            // create the DOM by reading file
+            CQ dom = CQ.CreateFromFile(HtmlFile);
+
+            // get section block type
+            var secType = dom["[data-type='section']"].Attr("data-block_type");
+            secType = String.Format("data-block_type=\"{0}\"", secType);
+
+            // select with JQuery methods
+            var figBlocks = dom["div[data-block_type='" + block_type + "']"];
+
+            int figCnt = figBlocks.Count();
+
+            // generate supplemental window files
+            int imgCnt = 0;
+
+            foreach (var figEl in figBlocks)
+            {
+                // NAME SUPPLEMENTAL WINDOW FILE
+                // filename is found in the data-filename attribute of the main figure div
+                var attrs = figEl.Attributes;
+                var filename = attrs["data-filename"];
+                if (filename == null)
+                {
+                    textBox1.Text += String.Format("Null filename in {0} - abort run", HtmlFile);
+                    return;
+                }
+
+                // extract the HTML
+                var figBlock = figEl.OuterHTML;
+
+                // EDIT IMAGE PATHS
+                // make image paths relative (just remove path -- in same directory in this case)
+                // NOTE: Maybe save path for later use in placing files to chapter directories,
+                // which are canned here
+                // figBlock = figBlock.Replace("asset/ch3/", "");
+
+                // Edit "constant" header and footer for title and chapter CSS and JS file names
+                suppWinTop = _suppWinTop.Replace(subTitle, "Figure");
+                suppWinTop = suppWinTop.Replace(subChapNum, chapnum);
+                suppWinTop = suppWinTop.Replace(@"data-block_type=""section""", secType);
+                suppWinBottom = _suppWinBottom.Replace(subChapNum, chapnum);
+
+                // surround figure code with supplemental file HTML
+                figBlock = suppWinTop + Environment.NewLine + figBlock + Environment.NewLine + suppWinBottom;
+
+                // and write to target directory
+                File.WriteAllText(suppWinDir + filename, figBlock);
+                imgCnt++;
+            }
+            textBox1.Text += String.Format("{0} {1} files written{2}", imgCnt, block_type, Environment.NewLine);
+        }
+
+        private void genTblSuppWins(string HtmlFile, string block_type)
+        {
+            // create the DOM by reading file
+            CQ dom = CQ.CreateFromFile(HtmlFile);
+
+            // get section block type
+            var secType = dom["[data-type='section']"].Attr("data-block_type");
+            secType = String.Format("data-block_type=\"{0}\"", secType);
+
+            // select with JQuery methods
+            var tblBlocks = dom["div[data-block_type='" + block_type + "']"];
+
+            int tblCnt = 0;
+
+            // generate supplemental window files
+            foreach (var tblEl in tblBlocks)
+            {
+                // NAME SUPPLEMENTAL WINDOW FILE
+                // filename is found in the data-filename attribute of the main table div
+                var attrs = tblEl.Attributes;
+                var filename = attrs["data-filename"];
+
+                // extract the HTML
+                var tblBlock = tblEl.OuterHTML;
+
+                // EDIT IMAGE PATHS - reference parent directory
+                Regex rgx = new Regex(@"(src="")asset/ch\d+/");
+                tblBlock = rgx.Replace(tblBlock, "$1../");
+
+                // Edit "constant" header and footer for title and chapter CSS and JS file names
+                suppWinTop = _suppWinTop.Replace(subTitle, "Table");
+                suppWinTop = suppWinTop.Replace(subChapNum, chapnum);
+                suppWinTop = suppWinTop.Replace(@"data-block_type=""section""", secType);
+                suppWinBottom = _suppWinBottom.Replace(subChapNum, chapnum);
+
+                // surround table code with supplemental file HTML
+                tblBlock = suppWinTop + Environment.NewLine + tblBlock + Environment.NewLine + suppWinBottom;
+
+                // and write to target directory
+                File.WriteAllText(suppWinDir + filename, tblBlock);
+                tblCnt++;
+            }
+
+            textBox1.Text += String.Format("{0} {1} files written{2}", tblCnt, block_type, Environment.NewLine);
+        }
+
+        private void genQSuppWins(string HtmlFile, string data_type)
+        {
+            // create the DOM by reading file
+            CQ dom = CQ.CreateFromFile(HtmlFile);
+
+            // get section block type
+            var secType = dom["[data-type='section']"].Attr("data-block_type");
+            secType = String.Format("data-block_type=\"{0}\"", secType);
+
+            // select with JQuery methods
+            var qBlocks = dom["div[data-type='" + data_type + "']"];
+
+            int qCnt = 0;
+
+            // generate supplemental window files
+            foreach (var qEl in qBlocks)
+            {
+                // NAME SUPPLEMENTAL WINDOW FILE
+                // filename is found in the data-filename attribute of the main table div
+                var attrs = qEl.Attributes;
+                var filename = attrs["data-block_type"];
+                if (filename == null)
+                {
+                    filename = "MISSING_FILENAME.html";
+                }
+
+                // extract the HTML
+                var qBlock = qEl.OuterHTML;
+
+                // EDIT IMAGE PATHS - reference parent directory
+                Regex rgx = new Regex(@"(src="")asset/ch\d+/");
+                qBlock = rgx.Replace(qBlock, "$1../");
+
+                // Edit "constant" header and footer for title and chapter CSS and JS file names
+                suppWinTop = _suppWinTop.Replace(subTitle, "Exercise");
+                suppWinTop = suppWinTop.Replace(subChapNum, chapnum);
+                suppWinTop = suppWinTop.Replace(@"data-block_type=""section""", secType);
+                suppWinBottom = _suppWinBottom.Replace(subChapNum, chapnum);
+
+                // surround table code with supplemental file HTML
+                qBlock = suppWinTop + Environment.NewLine + qBlock + Environment.NewLine + suppWinBottom;
+
+                // and write to target directory
+                File.WriteAllText(suppWinDir + filename, qBlock);
+                qCnt++;
+            }
+
+            textBox1.Text += String.Format("{0} {1} files written{2}", qCnt, data_type, Environment.NewLine);
+        }
+
+        private void genExpSuppWins(string HtmlFile, string block_type)
+        {
+            // create the DOM by reading file
+            CQ dom = CQ.CreateFromFile(HtmlFile);
+
+            // get section block type
+            var secType = dom["[data-type='section']"].Attr("data-block_type");
+            secType = String.Format("data-block_type=\"{0}\"", secType);
+
+            // select with JQuery methods
+            var expBlocks = dom["div[data-block_type='" + block_type + "']"];
+
+            int expCnt = 0;
+
+            // generate supplemental window files
+            foreach (var expEl in expBlocks)
+            {
+                // NAME SUPPLEMENTAL WINDOW FILE
+                // filename is found in the data-filename attribute of the main example div
+                var attrs = expEl.Attributes;
+                var filename = attrs["data-filename"];
+
+                // extract the HTML
+                var expBlock = expEl.OuterHTML;
+
+                // EDIT IMAGE PATHS - reference parent directory
+                // Regex rgx = new Regex(@"(src="")asset/ch\d+/");
+                // expBlock = rgx.Replace(expBlock, "$1../../../../");
+
+                // Edit "constant" header and footer for title and chapter CSS and JS file names
+                suppWinTop = _suppWinTop.Replace(subTitle, "Example");
+                suppWinTop = suppWinTop.Replace(subChapNum, chapnum);
+                suppWinTop = suppWinTop.Replace(@"data-block_type=""section""", secType);
+                suppWinBottom = _suppWinBottom.Replace(subChapNum, chapnum);
+
+                // surround table code with supplemental file HTML
+                expBlock = suppWinTop + Environment.NewLine + expBlock + Environment.NewLine + suppWinBottom;
+
+                // and write to target directory
+                File.WriteAllText(suppWinDir + filename, expBlock);
+                expCnt++;
+            }
+
+            textBox1.Text += String.Format("{0} {1} files written{2}", expCnt, block_type, Environment.NewLine);
+        }
+
+    }
+}
