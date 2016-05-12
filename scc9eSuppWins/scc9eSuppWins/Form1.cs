@@ -115,7 +115,7 @@ $(window).ready(function ()
 
             // Here's code for chapter files, but will eventually need to include appendices, FM/BM, etc.
 
-            srcHtmlFiles = Directory.GetFiles(srcDir, bookId + "_ch*.html");
+            srcHtmlFiles = Directory.GetFiles(srcDir, bookId + "_*.html");
 
             foreach (string secfile in srcHtmlFiles)
             {
@@ -158,10 +158,10 @@ $(window).ready(function ()
         {
             // get chapter number from filename
             var fname = Path.GetFileNameWithoutExtension(HtmlFile);
-            Regex rgx = new Regex(@".*?_ch0?(\d+)_\d*");
-            chapnum = rgx.Replace(fname, "$1");
+            Regex rgx = new Regex(@".*?_(ch|part)([\dIV]+)_\d*");
+            chapnum = rgx.Replace(fname, "$1$2");
             // get source file path, add on target path
-            baseSuppWinDir = Path.GetDirectoryName(HtmlFile) + @"\asset\ch" + chapnum + @"\supp_wins\";
+            baseSuppWinDir = Path.GetDirectoryName(HtmlFile) + @"\asset\" + chapnum + @"\supp_wins\";
         }
 
         private void genFigSuppWins(string HtmlFile, string block_type)
