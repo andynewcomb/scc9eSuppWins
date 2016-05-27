@@ -28,7 +28,7 @@ namespace scc9eSuppWins
 <link href = ""../../../../css/manuscript.css"" media=""screen"" rel=""stylesheet"" type=""text/css"" >
 <link href = ""../../../../css/digfir_ebook_fw.css"" media=""screen"" rel=""stylesheet"" type=""text/css"" >
 <link href = ""../../../../css/scc9e.css"" media=""screen"" rel=""stylesheet"" type=""text/css"" >
-<link href = ""../../../../css/scc9e_ch_DL_CHAPTER_NUMBER_.css"" media=""screen"" rel=""stylesheet"" type=""text/css"" >
+<link href = ""../../../../css/scc9e__DL_CHAPTER_NUMBER_.css"" media=""screen"" rel=""stylesheet"" type=""text/css"" >
 <link href = ""../../../../asset/supp_win.css"" media=""screen"" rel=""stylesheet"" type=""text/css"" >
 </head>
 <body id=""supp_win"">
@@ -47,7 +47,7 @@ namespace scc9eSuppWins
 <script type = ""text/javascript"" src=""http://admin.brightcove.com/js/BrightcoveExperiences.js""></script>
 <script type = ""text/javascript"" src=""../../../../js/digfir_ebook_fw.js""></script>
 <script type = ""text/javascript"" src=""../../../../js/scc9e.js""></script>
-<script type = ""text/javascript"" src=""../../../../js/scc9e_ch_DL_CHAPTER_NUMBER_.js""></script>
+<script type = ""text/javascript"" src=""../../../../js/scc9e__DL_CHAPTER_NUMBER_.js""></script>
 <script type = ""text/javascript"" src=""../../../supp_win.js""></script>
 <script type = ""text/javascript"">
 
