@@ -264,8 +264,8 @@ $(window).ready(function ()
                 var tblBlock = tblEl.OuterHTML;
 
                 // EDIT IMAGE PATHS - reference parent directory
-                rgx = new Regex(@"(src="")asset/ch\d+/");
-                tblBlock = rgx.Replace(tblBlock, "$1../");
+                //rgx = new Regex(@"(src="")asset/ch\d+/");
+                //tblBlock = rgx.Replace(tblBlock, "$1../");
 
                 // Edit "constant" header and footer for title and chapter CSS and JS file names
                 suppWinTop = _suppWinTop.Replace(subTitle, title);
@@ -314,11 +314,11 @@ $(window).ready(function ()
                 var qBlock = qEl.OuterHTML;
 
                 // EDIT IMAGE PATHS - reference parent directory
-                Regex rgx = new Regex(@"(src="")asset/ch\d+/");
-                qBlock = rgx.Replace(qBlock, "$1../");
+                //Regex rgx = new Regex(@"(src="")asset/ch\d+/");
+                //qBlock = rgx.Replace(qBlock, "$1../");
 
                 // get question number for supp win title
-                rgx = new Regex(@"exercise_(\d+)_(\d+).html");
+                Regex rgx = new Regex(@"exercise_(\d+)_(\d+).html");
                 string qtnum = rgx.Replace(filename, "$1.$2");
                 string title = "Exercise";
                 if (qtnum.Length > 0)
