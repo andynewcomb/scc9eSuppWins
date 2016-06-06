@@ -28,7 +28,7 @@ namespace scc9eSuppWins
 <link href = ""../../../../css/manuscript.css"" media=""screen"" rel=""stylesheet"" type=""text/css"" >
 <link href = ""../../../../css/digfir_ebook_fw.css"" media=""screen"" rel=""stylesheet"" type=""text/css"" >
 <link href = ""../../../../css/scc9e.css"" media=""screen"" rel=""stylesheet"" type=""text/css"" >
-<link href = ""../../../../css/scc9e_ch_DL_CHAPTER_NUMBER_.css"" media=""screen"" rel=""stylesheet"" type=""text/css"" >
+<link href = ""../../../../css/scc9e__DL_CHAPTER_NUMBER_.css"" media=""screen"" rel=""stylesheet"" type=""text/css"" >
 <link href = ""../../../../asset/supp_win.css"" media=""screen"" rel=""stylesheet"" type=""text/css"" >
 </head>
 <body id=""supp_win"">
@@ -47,7 +47,7 @@ namespace scc9eSuppWins
 <script type = ""text/javascript"" src=""http://admin.brightcove.com/js/BrightcoveExperiences.js""></script>
 <script type = ""text/javascript"" src=""../../../../js/digfir_ebook_fw.js""></script>
 <script type = ""text/javascript"" src=""../../../../js/scc9e.js""></script>
-<script type = ""text/javascript"" src=""../../../../js/scc9e_ch_DL_CHAPTER_NUMBER_.js""></script>
+<script type = ""text/javascript"" src=""../../../../js/scc9e__DL_CHAPTER_NUMBER_.js""></script>
 <script type = ""text/javascript"" src=""../../../supp_win.js""></script>
 <script type = ""text/javascript"">
 
@@ -63,8 +63,7 @@ $(window).ready(function ()
 
 
         // source HTML files
-        private string srcDir = @"c:\Users\Meade\Source\Repos\scc9e-html\scc9e-html\scc9e-html\ebook";
-        private string[] srcHtmlFiles;
+        private string srcDir = @"c:\Users\Meade\Source\Repos\scc9e-html\scc9e-html\scc9e-html\ebook"; private string[] srcHtmlFiles;
         // supplemental output directory -- will be adjusted per chapter
         private string baseSuppWinDir;
         private string suppWinDir;
@@ -116,8 +115,7 @@ $(window).ready(function ()
 
             // Here's code for chapter files, but will eventually need to include appendices, FM/BM, etc.
 
-            //srcHtmlFiles = Directory.GetFiles(srcDir, bookId + "_ch1_*.html");
-            srcHtmlFiles = Directory.GetFiles(srcDir, bookId + "_ch*.html");
+            srcHtmlFiles = Directory.GetFiles(srcDir, bookId + "_*.html");
 
             foreach (string secfile in srcHtmlFiles)
             {
@@ -129,7 +127,7 @@ $(window).ready(function ()
                 // generate numbered figure supplemental window files
                 genFigSuppWins(secfile, btFig);
                 // generate unnumbered figure supplemental window files
-                genFigSuppWins(secfile, btUnfig);
+                // genFigSuppWins(secfile, btUnfig);
 
                 // Process tables
                 // use table subdirectory
@@ -160,11 +158,10 @@ $(window).ready(function ()
         {
             // get chapter number from filename
             var fname = Path.GetFileNameWithoutExtension(HtmlFile);
-            Regex rgx = new Regex(@".*?_ch0?(\d+)_\d*");
-            chapnum = rgx.Replace(fname, "$1");
-            textBox1.Text += String.Format("Chapter {0}{1}", chapnum, Environment.NewLine);
+            Regex rgx = new Regex(@".*?_(ch|part)([\dIV]+)_\d*");
+            chapnum = rgx.Replace(fname, "$1$2");
             // get source file path, add on target path
-            baseSuppWinDir = Path.GetDirectoryName(HtmlFile) + @"\asset\ch" + chapnum + @"\supp_wins\";
+            baseSuppWinDir = Path.GetDirectoryName(HtmlFile) + @"\asset\" + chapnum + @"\supp_wins\";
         }
 
         private void genFigSuppWins(string HtmlFile, string block_type)
@@ -203,12 +200,21 @@ $(window).ready(function ()
                 // make image paths relative (just remove path -- in same directory in this case)
                 // NOTE: Maybe save path for later use in placing files to chapter directories,
                 // which are canned here
-                // figBlock = figBlock.Replace("asset/ch3/", "../../");
-                Regex rgx = new Regex(@"asset/ch\d+/");
-                figBlock = rgx.Replace(figBlock, "../../");
+                // figBlock = figBlock.Replace("asset/ch3/", "");
+
+                // get figure number for supp win title
+                Regex rgx = new Regex(@"figure_\d+_(\d+).html");
+                string fignum = rgx.Replace(filename, "$1");
+                rgx = new Regex(@"figure_(\d+)_\d+.html");
+                string chan = rgx.Replace(filename, "$1");
+                string title = "Figure";
+                if (fignum.Length > 0)
+                {
+                    title = String.Format("{0} {1}.{2}", title, chan, fignum);
+                }
 
                 // Edit "constant" header and footer for title and chapter CSS and JS file names
-                suppWinTop = _suppWinTop.Replace(subTitle, "Figure");
+                suppWinTop = _suppWinTop.Replace(subTitle, title);
                 suppWinTop = suppWinTop.Replace(subChapNum, chapnum);
                 suppWinTop = suppWinTop.Replace(@"data-block_type=""section""", secType);
                 suppWinBottom = _suppWinBottom.Replace(subChapNum, chapnum);
@@ -245,15 +251,24 @@ $(window).ready(function ()
                 var attrs = tblEl.Attributes;
                 var filename = attrs["data-filename"];
 
+                // get table number for supp win title
+                Regex rgx = new Regex(@"table_(\d+)_(\d+).html");
+                string tblnum = rgx.Replace(filename, "$1.$2");
+                string title = "Table";
+                if (tblnum.Length > 0)
+                {
+                    title = String.Format("{0} {1}", title, tblnum);
+                }
+
                 // extract the HTML
                 var tblBlock = tblEl.OuterHTML;
 
                 // EDIT IMAGE PATHS - reference parent directory
-                Regex rgx = new Regex(@"(src="")asset/ch\d+/");
-                tblBlock = rgx.Replace(tblBlock, "$1../");
+                //rgx = new Regex(@"(src="")asset/ch\d+/");
+                //tblBlock = rgx.Replace(tblBlock, "$1../");
 
                 // Edit "constant" header and footer for title and chapter CSS and JS file names
-                suppWinTop = _suppWinTop.Replace(subTitle, "Table");
+                suppWinTop = _suppWinTop.Replace(subTitle, title);
                 suppWinTop = suppWinTop.Replace(subChapNum, chapnum);
                 suppWinTop = suppWinTop.Replace(@"data-block_type=""section""", secType);
                 suppWinBottom = _suppWinBottom.Replace(subChapNum, chapnum);
@@ -289,23 +304,30 @@ $(window).ready(function ()
                 // NAME SUPPLEMENTAL WINDOW FILE
                 // filename is found in the data-filename attribute of the main table div
                 var attrs = qEl.Attributes;
-                string filename = attrs["data-block_type"];
+                var filename = attrs["data-block_type"];
                 if (filename == null)
                 {
                     filename = "MISSING_FILENAME.html";
                 }
 
-// textBox1.Text += String.Format("{0}{1}", filename, Environment.NewLine);
-
                 // extract the HTML
                 var qBlock = qEl.OuterHTML;
 
                 // EDIT IMAGE PATHS - reference parent directory
-                Regex rgx = new Regex(@"(src="")asset/ch(\d+)/");
-                qBlock = rgx.Replace(qBlock, "$1../../../ch$2/");
+                //Regex rgx = new Regex(@"(src="")asset/ch\d+/");
+                //qBlock = rgx.Replace(qBlock, "$1../");
+
+                // get question number for supp win title
+                Regex rgx = new Regex(@"exercise_(\d+)_(\d+).html");
+                string qtnum = rgx.Replace(filename, "$1.$2");
+                string title = "Exercise";
+                if (qtnum.Length > 0)
+                {
+                    title = String.Format("{0} {1}", title, qtnum);
+                }
 
                 // Edit "constant" header and footer for title and chapter CSS and JS file names
-                suppWinTop = _suppWinTop.Replace(subTitle, "Exercise");
+                suppWinTop = _suppWinTop.Replace(subTitle, title);
                 suppWinTop = suppWinTop.Replace(subChapNum, chapnum);
                 suppWinTop = suppWinTop.Replace(@"data-block_type=""section""", secType);
                 suppWinBottom = _suppWinBottom.Replace(subChapNum, chapnum);
@@ -347,11 +369,20 @@ $(window).ready(function ()
                 var expBlock = expEl.OuterHTML;
 
                 // EDIT IMAGE PATHS - reference parent directory
-                Regex rgx = new Regex(@"(src="")asset/ch\d+/");
-                expBlock = rgx.Replace(expBlock, "$1../../");
+                // Regex rgx = new Regex(@"(src="")asset/ch\d+/");
+                // expBlock = rgx.Replace(expBlock, "$1../../../../");
+
+                // get example number for supp win title
+                Regex rgx = new Regex(@"example_(\d+)_(\d+).html");
+                string qtnum = rgx.Replace(filename, "$1.$2");
+                string title = "Example";
+                if (qtnum.Length > 0)
+                {
+                    title = String.Format("{0} {1}", title, qtnum);
+                }
 
                 // Edit "constant" header and footer for title and chapter CSS and JS file names
-                suppWinTop = _suppWinTop.Replace(subTitle, "Example");
+                suppWinTop = _suppWinTop.Replace(subTitle, title);
                 suppWinTop = suppWinTop.Replace(subChapNum, chapnum);
                 suppWinTop = suppWinTop.Replace(@"data-block_type=""section""", secType);
                 suppWinBottom = _suppWinBottom.Replace(subChapNum, chapnum);
